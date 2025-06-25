@@ -50,13 +50,10 @@ jobs:
           key: ${{ secrets.DROPLET_SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            # Exit immediately if a command exits with a non-zero status
             set -e
 
-            # Define the deployment directory from the secret
             DEPLOY_DIR="${{ secrets.DEPLOY_PATH }}"
             
-            # Ensure the directory exists and we have the correct permissions
             echo "Setting up deployment directory: $DEPLOY_DIR"
             sudo mkdir -p "$DEPLOY_DIR"
             sudo chown ${{ secrets.DROPLET_USER }}:${{ secrets.DROPLET_USER }} "$DEPLOY_DIR"
@@ -68,7 +65,7 @@ jobs:
             if [ -d ".git" ]; then
               echo "Repository exists. Pulling latest changes..."
               git fetch origin
-              # IMPORTANT: Use the branch that triggers your workflow, e.g., 'deploy' or 'main'
+              
               git reset --hard origin/deploy
             else
               echo "Cloning repository for the first time..."
@@ -76,11 +73,13 @@ jobs:
             fi
 
 
+            # Now that docker-compose.yml is on the server, we can proceed.
             echo "Logging into GHCR and pulling new image..."
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
             docker pull ${{ env.IMAGE_NAME }}:latest
             
             echo "Starting application with Docker Compose..."
+            # Using --force-recreate to ensure the new image is used
             docker compose up -d --force-recreate
             
             echo "Pruning old Docker images..."
