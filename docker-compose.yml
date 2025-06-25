@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  web:
+    image: ghcr.io/jagustinus/generate-hoaks-gpt2:latest
+
+    restart: always
+    
+    ports:
+      - "127.0.0.1:8501:8501"
