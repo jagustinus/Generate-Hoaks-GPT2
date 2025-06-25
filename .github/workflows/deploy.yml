@@ -50,28 +50,40 @@ jobs:
           key: ${{ secrets.DROPLET_SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            # Exit immediately if any command fails
+            # Exit immediately if a command exits with a non-zero status
             set -e
 
-            # Navigate to the deployment directory for this specific project
-            cd ${{ secrets.DEPLOY_PATH }}
+            # Define the deployment directory from the secret
+            DEPLOY_DIR="${{ secrets.DEPLOY_PATH }}"
             
-            # Log in to the GitHub Container Registry from the server
-            echo "Logging into GHCR..."
+            # Ensure the directory exists and we have the correct permissions
+            echo "Setting up deployment directory: $DEPLOY_DIR"
+            sudo mkdir -p "$DEPLOY_DIR"
+            sudo chown ${{ secrets.DROPLET_USER }}:${{ secrets.DROPLET_USER }} "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+            # Check if repo exists, then clone it or pull the latest version
+            if [ -d ".git" ]; then
+              echo "Repository exists. Pulling latest changes..."
+              git fetch origin
+              # IMPORTANT: Use the branch that triggers your workflow, e.g., 'deploy' or 'main'
+              git reset --hard origin/deploy
+            else
+              echo "Cloning repository for the first time..."
+              git clone git@github.com:jagustinus/Generate-Hoaks-GPT2.git .
+            fi
+
+
+            echo "Logging into GHCR and pulling new image..."
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
-            
-            # Pull the latest version of the image from the registry
-            echo "Pulling latest image: ${{ env.IMAGE_NAME }}:latest"
             docker pull ${{ env.IMAGE_NAME }}:latest
             
-            # Restart the service using the new image.
-            # The 'docker-compose.yml' file on your server defines the service.
-            echo "Restarting Docker Compose service..."
-            docker compose up -d
+            echo "Starting application with Docker Compose..."
+            docker compose up -d --force-recreate
             
-            # Clean up any old, unused Docker images to save disk space
-            echo "Pruning old images..."
+            echo "Pruning old Docker images..."
             docker image prune -f
 
             echo "✅ Project D deployment completed successfully!"
-            
