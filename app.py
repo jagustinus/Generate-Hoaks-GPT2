@@ -3,10 +3,19 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Load model dari Hugging Face
+# @st.cache_resource
+# def load_model():
+#     model = AutoModelForCausalLM.from_pretrained("Ricky131/model-hoax-gpt2")
+#     tokenizer = AutoTokenizer.from_pretrained("Ricky131/model-hoax-gpt2")
+#     tokenizer.pad_token = tokenizer.eos_token
+#     return model, tokenizer
+
 @st.cache_resource
 def load_model():
-    model = AutoModelForCausalLM.from_pretrained("Ricky131/model-hoax-gpt2")
-    tokenizer = AutoTokenizer.from_pretrained("Ricky131/model-hoax-gpt2")
+    # Load the model from the local directory
+    model_dir = "./model"
+    model = AutoModelForCausalLM.from_pretrained(model_dir)
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
     tokenizer.pad_token = tokenizer.eos_token
     return model, tokenizer
 

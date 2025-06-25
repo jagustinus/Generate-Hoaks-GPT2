@@ -1,3 +1,7 @@
-transformers
-torch
+# transformers
+# torch
+# streamlit
+
 streamlit
+torch --index-url https://download.pytorch.org/whl/cpu
+transformers
